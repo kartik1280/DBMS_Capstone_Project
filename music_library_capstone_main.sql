@@ -1,4 +1,4 @@
-```sql
+
 CREATE DATABASE IF NOT EXISTS music_library;
 USE music_library;
 
@@ -264,4 +264,4 @@ SELECT
     ) AS percentage_contribution
 FROM album_totals
 ORDER BY album_id, track_title;
-```
+
