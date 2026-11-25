@@ -1,13 +1,16 @@
--- CREATE DATABASE IF NOT EXISTS music_library;
--- USE music_library;
+```sql
+CREATE DATABASE IF NOT EXISTS music_library;
+USE music_library;
 
--- 1. Artists
+-- Create tables
+
+-- Artists
 CREATE TABLE artists (
     artist_id INT PRIMARY KEY AUTO_INCREMENT,
     artist_name VARCHAR(100) NOT NULL
 );
 
--- 2. Albums
+-- Albums
 CREATE TABLE albums (
     album_id INT PRIMARY KEY AUTO_INCREMENT,
     album_title VARCHAR(150) NOT NULL,
@@ -16,13 +19,13 @@ CREATE TABLE albums (
     FOREIGN KEY (artist_id) REFERENCES artists(artist_id)
 );
 
--- 3. Genres
+-- Genres
 CREATE TABLE genres (
     genre_id INT PRIMARY KEY AUTO_INCREMENT,
     genre_name VARCHAR(50) NOT NULL UNIQUE
 );
 
--- 4. Tracks
+-- Tracks
 CREATE TABLE tracks (
     track_id INT PRIMARY KEY AUTO_INCREMENT,
     track_title VARCHAR(150) NOT NULL,
@@ -31,7 +34,7 @@ CREATE TABLE tracks (
     FOREIGN KEY (album_id) REFERENCES albums(album_id)
 );
 
--- 5. Track Genres
+-- Track Genres
 CREATE TABLE track_genres (
     track_id INT,
     genre_id INT,
@@ -40,13 +43,13 @@ CREATE TABLE track_genres (
     FOREIGN KEY (genre_id) REFERENCES genres(genre_id)
 );
 
--- 6. Users
+-- Users
 CREATE TABLE users (
     user_id INT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(100) NOT NULL UNIQUE
 );
 
--- 7. Playlists
+-- Playlists
 CREATE TABLE playlists (
     playlist_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
@@ -54,7 +57,7 @@ CREATE TABLE playlists (
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
--- 8. Playlist Tracks
+-- Playlist Tracks
 CREATE TABLE playlist_tracks (
     playlist_id INT,
     track_id INT,
@@ -64,7 +67,7 @@ CREATE TABLE playlist_tracks (
     FOREIGN KEY (track_id) REFERENCES tracks(track_id)
 );
 
--- 9. Listening History
+-- Listening History
 CREATE TABLE listening_history (
     history_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
@@ -74,14 +77,16 @@ CREATE TABLE listening_history (
     FOREIGN KEY (track_id) REFERENCES tracks(track_id)
 );
 
--- Insert Data
+-- Insert sample data
+
 INSERT INTO artists (artist_name) VALUES
 ('Daniel Caesar'), ('The Weeknd'), ('Joji'), ('Steve Lacy');
 
 INSERT INTO albums (album_title, release_year, artist_id) VALUES
 ('Freudian', 2017, 1), ('After Hours', 2020, 2), ('BALLADS 1', 2018, 3), ('Gemini Rights', 2022, 4);
 
-INSERT INTO genres (genre_name) VALUES ('R&B'), ('Alternative R&B');
+INSERT INTO genres (genre_name) VALUES
+('R&B'), ('Alternative R&B');
 
 INSERT INTO tracks (track_title, album_id, duration_seconds) VALUES
 ('Get You', 1, 278), ('Best Part', 1, 209), ('Japanese Denim', 1, 257),
@@ -93,9 +98,11 @@ INSERT INTO track_genres (track_id, genre_id) VALUES
 (1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1),
 (7, 2), (8, 2), (9, 2), (10, 2), (11, 2), (12, 2);
 
-INSERT INTO users (username) VALUES ('user_one'), ('user_two');
+INSERT INTO users (username) VALUES
+('user_one'), ('user_two');
 
-INSERT INTO playlists (user_id, playlist_name) VALUES (1, 'Late Night Vibes'), (2, 'R&B Collection');
+INSERT INTO playlists (user_id, playlist_name) VALUES
+(1, 'Late Night Vibes'), (2, 'R&B Collection');
 
 INSERT INTO playlist_tracks (playlist_id, track_id, position) VALUES
 (1, 1, 1), (1, 2, 2), (1, 7, 3), (1, 10, 4), (1, 4, 5),
@@ -117,15 +124,17 @@ INSERT INTO listening_history (user_id, track_id, played_at) VALUES
 (1,10,'2026-11-01 09:00:00'), (1,10,'2026-11-02 09:00:00'), (1,10,'2026-11-03 09:00:00'),
 (1,11,'2026-11-01 09:00:00'), (1,11,'2026-11-03 09:00:00'), (1,12,'2026-11-02 09:00:00');
 
--- ----------------------------------------------------
--- CRUD Operations
--- ----------------------------------------------------
--- Insert a new track
-INSERT INTO tracks (track_title, album_id, duration_seconds) VALUES ('Snooze', 1, 201);
+-- CRUD operations
+
+-- Insert a track
+INSERT INTO tracks (track_title, album_id, duration_seconds)
+VALUES ('Snooze', 1, 201);
 
 -- Update a track
 SET SQL_SAFE_UPDATES = 0;
-UPDATE tracks SET duration_seconds = 210 WHERE track_title = 'Snooze';
+UPDATE tracks
+SET duration_seconds = 210
+WHERE track_title = 'Snooze';
 
 -- Delete a track
 DELETE FROM tracks WHERE track_title = 'Snooze';
@@ -137,43 +146,42 @@ FROM tracks
 WHERE duration_seconds > (SELECT AVG(duration_seconds) FROM tracks)
 ORDER BY duration_seconds DESC;
 
--- ----------------------------------------------------
--- Indexing 
--- ----------------------------------------------------
--- Creating FULLTEXT indexes to meet capstone requirements (Replaced B-Tree indexes)
+-- Indexing
+
 CREATE FULLTEXT INDEX idx_track_title ON tracks(track_title);
 CREATE FULLTEXT INDEX idx_artist_name ON artists(artist_name);
 
--- Composite index on playlist tracks (playlist_id, position)
-CREATE INDEX idx_playlist_position ON playlist_tracks(playlist_id, position);
+CREATE INDEX idx_playlist_position
+ON playlist_tracks(playlist_id, position);
 
--- EXPLAIN Comparisons
--- 1. Compare LIKE '%text%' (Leading wildcard prevents standard index usage)
-EXPLAIN SELECT * FROM tracks WHERE track_title LIKE '%Lights%';
+-- EXPLAIN queries
+EXPLAIN SELECT * FROM tracks
+WHERE track_title LIKE '%Lights%';
 
--- 2. Prefix search (Can utilize B-Tree index if one existed, but shows standard scan behavior here)
-EXPLAIN SELECT * FROM tracks WHERE track_title LIKE 'Blind%';
+EXPLAIN SELECT * FROM tracks
+WHERE track_title LIKE 'Blind%';
 
--- 3. FULLTEXT search (Utilizes the FULLTEXT index created above)
-EXPLAIN SELECT * FROM tracks WHERE MATCH(track_title) AGAINST('Lights');
+EXPLAIN SELECT * FROM tracks
+WHERE MATCH(track_title) AGAINST('Lights');
 
--- ----------------------------------------------------
 -- Views
--- ----------------------------------------------------
--- 1. Track details view
+
+-- Track details
 CREATE VIEW track_details AS
 SELECT
-    t.track_id, t.track_title, al.album_title, ar.artist_name, g.genre_name, t.duration_seconds
+    t.track_id, t.track_title, al.album_title, ar.artist_name,
+    g.genre_name, t.duration_seconds
 FROM tracks t
 JOIN albums al ON t.album_id = al.album_id
 JOIN artists ar ON al.artist_id = ar.artist_id
 JOIN track_genres tg ON t.track_id = tg.track_id
 JOIN genres g ON tg.genre_id = g.genre_id;
 
--- 2. Top artists view based on play counts (Replaces basic track count to meet requirements)
+-- Top artists by plays
 CREATE VIEW top_artists_by_plays AS
 SELECT
-    ar.artist_id, ar.artist_name, COUNT(lh.history_id) AS total_plays
+    ar.artist_id, ar.artist_name,
+    COUNT(lh.history_id) AS total_plays
 FROM artists ar
 JOIN albums al ON ar.artist_id = al.artist_id
 JOIN tracks t ON al.album_id = t.album_id
@@ -181,12 +189,12 @@ JOIN listening_history lh ON t.track_id = lh.track_id
 GROUP BY ar.artist_id, ar.artist_name
 ORDER BY total_plays DESC;
 
--- ----------------------------------------------------
--- Window Functions
--- ----------------------------------------------------
--- 1. DENSE_RANK(): Top 5 tracks per genre by play count
+-- Window functions
+
+-- DENSE_RANK: Top tracks in each genre
 WITH track_plays AS (
-    SELECT g.genre_name, t.track_title, COUNT(lh.history_id) AS total_plays
+    SELECT g.genre_name, t.track_title,
+           COUNT(lh.history_id) AS total_plays
     FROM tracks t
     JOIN track_genres tg ON t.track_id = tg.track_id
     JOIN genres g ON tg.genre_id = g.genre_id
@@ -195,40 +203,65 @@ WITH track_plays AS (
 ),
 ranked_tracks AS (
     SELECT genre_name, track_title, total_plays,
-           DENSE_RANK() OVER (PARTITION BY genre_name ORDER BY total_plays DESC) AS song_rank
+           DENSE_RANK() OVER (
+               PARTITION BY genre_name
+               ORDER BY total_plays DESC
+           ) AS song_rank
     FROM track_plays
 )
-SELECT * FROM ranked_tracks WHERE song_rank <= 5 ORDER BY genre_name, song_rank;
+SELECT *
+FROM ranked_tracks
+WHERE song_rank <= 5
+ORDER BY genre_name, song_rank;
 
--- 2. LEAD(): Next track played in user's listening history
+-- LEAD: Next track in listening history
 SELECT
-    u.username, t.track_title AS current_track, lh.played_at,
-    LEAD(t.track_title) OVER (PARTITION BY u.user_id ORDER BY lh.played_at) AS next_track
+    u.username,
+    t.track_title AS current_track,
+    lh.played_at,
+    LEAD(t.track_title) OVER (
+        PARTITION BY u.user_id
+        ORDER BY lh.played_at
+    ) AS next_track
 FROM listening_history lh
 JOIN users u ON lh.user_id = u.user_id
 JOIN tracks t ON lh.track_id = t.track_id;
 
--- 3. Running total of plays per day
+-- Running total of daily plays
 SELECT
-    DATE(played_at) AS play_date, COUNT(*) AS daily_plays,
-    SUM(COUNT(*)) OVER (ORDER BY DATE(played_at)) AS running_total
+    DATE(played_at) AS play_date,
+    COUNT(*) AS daily_plays,
+    SUM(COUNT(*)) OVER (
+        ORDER BY DATE(played_at)
+    ) AS running_total
 FROM listening_history
 GROUP BY DATE(played_at)
 ORDER BY play_date;
 
--- 4. SUM() OVER (PARTITION BY album_id): Percentage contribution of each track to album's plays
+-- Track contribution to album plays
 WITH track_plays AS (
-    SELECT t.track_id, t.track_title, t.album_id, COUNT(lh.history_id) AS total_track_plays
+    SELECT
+        t.track_id, t.track_title, t.album_id,
+        COUNT(lh.history_id) AS total_track_plays
     FROM tracks t
     LEFT JOIN listening_history lh ON t.track_id = lh.track_id
     GROUP BY t.track_id, t.track_title, t.album_id
 ),
 album_totals AS (
-    SELECT track_title, album_id, total_track_plays,
-           SUM(total_track_plays) OVER (PARTITION BY album_id) AS total_album_plays
+    SELECT
+        track_title, album_id, total_track_plays,
+        SUM(total_track_plays) OVER (
+            PARTITION BY album_id
+        ) AS total_album_plays
     FROM track_plays
 )
-SELECT track_title, total_track_plays, total_album_plays,
-       ROUND(total_track_plays * 100.0 / NULLIF(total_album_plays, 0), 2) AS percentage_contribution
+SELECT
+    track_title,
+    total_track_plays,
+    total_album_plays,
+    ROUND(
+        total_track_plays * 100.0 / NULLIF(total_album_plays, 0), 2
+    ) AS percentage_contribution
 FROM album_totals
 ORDER BY album_id, track_title;
+```
